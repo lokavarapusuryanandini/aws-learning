@@ -1,0 +1,24 @@
+{
+  "name": "01-iam",
+  "version": "1.0.0",
+  "description": "Day 1 — IAM: users, roles, policies in TypeScript",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "user": "ts-node src/createUser.ts",
+    "role": "ts-node src/createRole.ts",
+    "policy": "ts-node src/attachPolicy.ts",
+    "list": "ts-node src/listResources.ts",
+    "simulate": "ts-node src/simulatePolicy.ts",
+    "cleanup": "ts-node src/cleanup.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-iam": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}

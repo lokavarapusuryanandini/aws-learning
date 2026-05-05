@@ -1,26 +1,14 @@
-# AWS credentials — never commit these
-.env
-*.pem
-*.key
-credentials
-.aws/
-
-# CDK
-cdk.out/
 node_modules/
+dist/
+cdk.out/
+.env
 *.js.map
-
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.backup
-*.tfvars
-
-# Python
-__pycache__/
-*.pyc
-.venv/
-
-# OS
+*.d.ts
 .DS_Store
-Thumbs.db
+
+# AWS CDK
+cdk.context.json
+
+# Secrets — never commit these
+.env.local
+credentials

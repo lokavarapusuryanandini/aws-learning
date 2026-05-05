@@ -1,0 +1,35 @@
+{
+  "name": "aws-learning",
+  "version": "1.0.0",
+  "description": "20-day AWS hands-on learning repo — TypeScript + AWS SDK v3 + CDK",
+  "private": true,
+  "workspaces": [
+    "01-iam",
+    "02-s3",
+    "03-ec2",
+    "04-vpc",
+    "05-rds",
+    "06-lambda",
+    "07-apigateway",
+    "08-dynamodb",
+    "09-sqs-sns",
+    "10-cloudwatch",
+    "11-cloudformation",
+    "12-cdk",
+    "13-ecs-ecr",
+    "14-secrets-kms",
+    "15-elb-asg",
+    "16-stepfunctions",
+    "17-eventbridge",
+    "18-cloudfront-r53",
+    "19-concepts",
+    "20-project"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'dist' -type d -prune -exec rm -rf '{}' +"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

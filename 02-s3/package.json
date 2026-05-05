@@ -1,0 +1,23 @@
+{
+  "name": "02-s3",
+  "version": "1.0.0",
+  "description": "Day 2 — S3: buckets, uploads, versioning, presigned URLs",
+  "scripts": {
+    "build": "tsc",
+    "bucket": "ts-node src/createBucket.ts",
+    "upload": "ts-node src/uploadDownload.ts",
+    "policy": "ts-node src/bucketPolicy.ts",
+    "lifecycle": "ts-node src/lifecycle.ts",
+    "presigned": "ts-node src/presignedUrl.ts",
+    "cleanup": "ts-node src/cleanup.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}

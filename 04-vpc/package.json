@@ -1,0 +1,1 @@
+{"name":"04-vpc","version":"1.0.0","description":"Day 4 - VPC","scripts":{"build":"tsc","start":"ts-node src/index.ts","vpc":"ts-node src/createVpc.ts","subnets":"ts-node src/createSubnets.ts","cleanup":"ts-node src/cleanup.ts"},"dependencies":{"@aws-sdk/client-ec2":"^3.0.0"},"devDependencies":{"@types/node":"^20.0.0","ts-node":"^10.9.0","typescript":"^5.0.0"}}
