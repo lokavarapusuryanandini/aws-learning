@@ -1,1 +1,19 @@
-{"name":"03-ec2","version":"1.0.0","description":"Day 3 - EC2","scripts":{"build":"tsc","start":"ts-node src/index.ts","launch":"ts-node src/launchInstance.ts","ami":"ts-node src/createAmi.ts","cleanup":"ts-node src/cleanup.ts"},"dependencies":{"@aws-sdk/client-ec2":"^3.0.0"},"devDependencies":{"@types/node":"^20.0.0","ts-node":"^10.9.0","typescript":"^5.0.0"}}
+{
+  "name": "03-ec2",
+  "version": "1.0.0",
+  "description": "Day 3 — EC2: launch instances, security groups, key pairs, AMIs",
+  "scripts": {
+    "build": "tsc",
+    "launch": "ts-node src/launchInstance.ts",
+    "ami": "ts-node src/createAmi.ts",
+    "cleanup": "ts-node src/cleanup.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}

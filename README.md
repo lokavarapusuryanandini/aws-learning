@@ -120,7 +120,7 @@ Creating and managing S3 buckets, uploading/downloading objects, bucket policies
 |--------|-------------|
 | `npm run bucket` | Task 1 — Create a versioning-enabled private bucket with tags |
 | `npm run upload` | Task 2 — Upload/download objects, list versions, demo delete markers |
-| `npm run presigned` | Task 3 — Generate PUT/GET presigned URLs; upload a real image from backend and download it back |
+| `npm run presigned` | Task 3 — Generate PUT/GET presigned URLs; backend uploads a buffer via PUT, fetches it back via GET and reads it as text |
 | `npm run lifecycle` | Task 4 — Set lifecycle rules to auto-tier and expire objects |
 | `npm run cleanup` | Empty all object versions + delete markers, then delete the bucket |
 
@@ -130,7 +130,7 @@ Creating and managing S3 buckets, uploading/downloading objects, bucket policies
 |------|---------|
 | [src/createBucket.ts](02-s3/src/createBucket.ts) | Create bucket → block public access → enable versioning → tag |
 | [src/uploadDownload.ts](02-s3/src/uploadDownload.ts) | PutObject, GetObject, ListObjectsV2, versioning demo, delete markers |
-| [src/presignedUrl.ts](02-s3/src/presignedUrl.ts) | Generate PUT/GET presigned URLs; backend uploads `sample.png` and downloads it back as `downloaded.png` |
+| [src/presignedUrl.ts](02-s3/src/presignedUrl.ts) | Generate PUT/GET presigned URLs; backend PUTs a text buffer via presigned URL, then GETs and reads the content back as text |
 | [src/lifecycle.ts](02-s3/src/lifecycle.ts) | Lifecycle rules: Standard → IA → Glacier → expiry, temp file cleanup, old-version pruning |
 | [src/cleanup.ts](02-s3/src/cleanup.ts) | Paginated delete of all versions + delete markers, then delete bucket |
 
@@ -149,7 +149,7 @@ Creating and managing S3 buckets, uploading/downloading objects, bucket policies
 ```
 Backend                        S3
   │── getSignedUrl(PutObject) ──▶ returns signed URL
-  │── fetch(url, PUT, image)  ──▶ object stored in S3
+  │── fetch(url, PUT, buffer) ──▶ object stored in S3
   │── getSignedUrl(GetObject) ──▶ returns signed URL
   │── fetch(url, GET)         ──▶ downloads object
 ```
@@ -166,3 +166,67 @@ Backend                        S3
 - [S3 Versioning](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html)
 - [S3 Lifecycle rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html)
 - [Presigned URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ShareObjectPreSignedURL.html)
+
+---
+
+## 03 — EC2 (Elastic Compute Cloud)
+
+> **Folder:** [03-ec2/](03-ec2/)
+
+### What it covers
+
+Launching EC2 instances programmatically — key pairs, security groups, user data bootstrapping, and AMI creation using the AWS SDK v3.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run launch` | Task 1 — Resolve latest Amazon Linux 2023 AMI, create key pair + security group, launch `t3.micro`, wait for running, print SSH + HTTP commands |
+| `npm run ami` | Task 2 — Find running instance by tag, create AMI with `NoReboot: true`, wait for available |
+| `npm run cleanup` | Terminate instance → wait → deregister AMI → delete security group → delete key pair + local `.pem` |
+
+### Source files
+
+| File | Purpose |
+|------|---------|
+| [src/client.ts](03-ec2/src/client.ts) | Shared `EC2Client` and tag constants |
+| [src/launchInstance.ts](03-ec2/src/launchInstance.ts) | Dynamic AMI lookup → create key pair (saves `.pem`) → create security group (SSH + HTTP) → launch instance with Apache user data → wait for running |
+| [src/createAmi.ts](03-ec2/src/createAmi.ts) | Find instance by tag → create AMI with `NoReboot: true` → wait for available state |
+| [src/cleanup.ts](03-ec2/src/cleanup.ts) | Terminate instance → wait for terminated → deregister AMI → delete security group → delete key pair + `.pem` file |
+
+### Key concepts practiced
+
+- **AMI** — OS + config snapshot; always resolve the ID dynamically, never hardcode it (IDs change per region and over time)
+- **Key pair** — the private key is returned only once at creation; the script saves it immediately as a `.pem` file with `chmod 400`
+- **Security group** — stateful virtual firewall; inbound rules are explicit, return traffic is allowed automatically
+- **User data** — base64-encoded shell script that runs as root on first boot; used here to install and start Apache
+- **Instance states** — `pending → running → stopping → stopped → terminated`; waiters poll until the target state is reached
+- **AMI creation** — `NoReboot: true` creates the AMI without stopping the instance (fast, minor consistency trade-off)
+- **Tag-based resource discovery** — all resources are tagged `project: aws-learning, day: 03` so cleanup finds them without hardcoding IDs
+
+### Instance launch flow
+
+```
+launchInstance
+  ├── DescribeImages        → latest Amazon Linux 2023 AMI ID
+  ├── CreateKeyPair         → saves aws-learning-day03-key.pem
+  ├── CreateSecurityGroup   → allows port 22 (SSH) + port 80 (HTTP)
+  ├── RunInstances          → t3.micro with Apache user-data
+  └── waitUntilRunning      → prints public IP + SSH/HTTP commands
+```
+
+### Resources created
+
+- Key pair: `aws-learning-day03-key` (private key saved as `03-ec2/aws-learning-day03-key.pem`)
+- Security group: `aws-learning-day03-sg` (ports 22 + 80 open)
+- EC2 instance: `aws-learning-day03-instance` (`t3.micro`, Amazon Linux 2023, Apache on port 80)
+- AMI: `aws-learning-day03-snapshot` (if `npm run ami` was run)
+
+> Always run `npm run cleanup` after finishing — running EC2 instances accrue charges by the hour.
+
+### Further reading
+
+- [EC2 instance types](https://aws.amazon.com/ec2/instance-types/)
+- [Amazon Machine Images](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html)
+- [EC2 user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
+- [Security groups](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html)
