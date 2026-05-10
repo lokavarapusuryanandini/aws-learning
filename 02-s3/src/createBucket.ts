@@ -20,7 +20,7 @@ import {
 export const s3 = new S3Client({ region: "us-east-1" });
 
 // Bucket name must be globally unique — add a random suffix
-export const BUCKET_NAME = `aws-learning-${Date.now()}`;
+export const BUCKET_NAME = `aws-learning-nandini`;
 
 async function createBucket(): Promise<void> {
   console.log(`\n--- Creating S3 bucket: ${BUCKET_NAME} ---\n`);
