@@ -230,3 +230,75 @@ launchInstance
 - [Amazon Machine Images](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html)
 - [EC2 user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
 - [Security groups](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html)
+
+---
+
+## 04 — VPC (Virtual Private Cloud)
+
+> **Folder:** [04-vpc/](04-vpc/)
+
+### What it covers
+
+Building a custom VPC from scratch — CIDR blocks, Internet Gateway, route tables, and public/private subnets across multiple Availability Zones.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run vpc` | Task 1 — Create VPC (10.0.0.0/16), enable DNS, attach Internet Gateway, create public route table |
+| `npm run subnets` | Task 2 — Create public subnet (us-east-1a) + private subnet (us-east-1b), associate route tables |
+| `npm run cleanup` | Delete subnets → route tables → detach/delete IGW → delete VPC |
+
+### Source files
+
+| File | Purpose |
+|------|---------|
+| [src/client.ts](04-vpc/src/client.ts) | Shared `EC2Client` and tag constants |
+| [src/createVpc.ts](04-vpc/src/createVpc.ts) | Create VPC → enable DNS → create + attach IGW → create public route table with 0.0.0.0/0 → IGW |
+| [src/createSubnets.ts](04-vpc/src/createSubnets.ts) | Find VPC by tag → create public subnet (auto-assign IP, associated with public RT) + private subnet (main RT only) |
+| [src/cleanup.ts](04-vpc/src/cleanup.ts) | Delete in dependency order: subnets → custom route tables → IGW → VPC |
+
+### Key concepts practiced
+
+- **VPC** — isolated virtual network; your own private section of AWS cloud
+- **CIDR block** — IP range of the VPC (`10.0.0.0/16` = 65,536 addresses); subnets carve slices from this range
+- **Internet Gateway** — the bridge between VPC and the public internet; one per VPC
+- **Route table** — defines where traffic is forwarded; every subnet uses one
+- **Public subnet** — subnet with a route table that has `0.0.0.0/0 → IGW`
+- **Private subnet** — subnet with no route to IGW; traffic stays within VPC
+- **Auto-assign public IP** — public subnet instances automatically get a public IP on launch
+- **AZ spreading** — subnets live in one AZ; spread across AZs for high availability
+- **NAT Gateway** — allows private subnet instances to reach the internet (outbound only); not covered here as it has an hourly cost
+
+### VPC architecture
+
+```
+VPC (10.0.0.0/16)
+  ├── Internet Gateway
+  │
+  ├── Public Route Table
+  │     └── 0.0.0.0/0 → IGW
+  │
+  ├── Public Subnet  (10.0.0.0/24, us-east-1a)   ← uses public route table
+  │     └── instances get public IP automatically
+  │
+  └── Private Subnet (10.0.1.0/24, us-east-1b)   ← uses VPC main route table
+        └── no internet route; internal only
+```
+
+### Resources created
+
+- VPC: `aws-learning-day04-vpc` (CIDR `10.0.0.0/16`, DNS enabled)
+- Internet Gateway: `aws-learning-day04-igw`
+- Public route table: `aws-learning-day04-public-rt` (route: `0.0.0.0/0 → IGW`)
+- Public subnet: `aws-learning-day04-public-1a` (`10.0.0.0/24`, us-east-1a)
+- Private subnet: `aws-learning-day04-private-1b` (`10.0.1.0/24`, us-east-1b)
+
+> Always run `npm run cleanup` after finishing.
+
+### Further reading
+
+- [VPC concepts](https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html)
+- [Subnets](https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html)
+- [Internet gateways](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html)
+- [Route tables](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html)
