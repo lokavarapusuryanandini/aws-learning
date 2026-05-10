@@ -302,3 +302,83 @@ VPC (10.0.0.0/16)
 - [Subnets](https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html)
 - [Internet gateways](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html)
 - [Route tables](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html)
+
+---
+
+## 05 — RDS (Relational Database Service)
+
+> **Folder:** [05-rds/](05-rds/)
+
+### What it covers
+
+Launching a managed PostgreSQL RDS instance, connecting to it with `pg` (node-postgres), and running parameterised SQL queries from Node.js.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run db` | Task 1 — Find the default VPC, create a DB subnet group + security group, launch a `db.t3.micro` PostgreSQL instance, wait for available, print endpoint |
+| `npm run connect` | Task 2 — Resolve the endpoint via SDK, connect with `pg`, create a table, insert rows, run SELECT/UPDATE/aggregate queries, demo a transaction |
+| `npm run cleanup` | Delete RDS instance (no snapshot) → wait → delete subnet group → delete security group |
+
+### Source files
+
+| File | Purpose |
+|------|---------|
+| [src/client.ts](05-rds/src/client.ts) | Shared `RDSClient`, `EC2Client`, constants, and credentials |
+| [src/createDb.ts](05-rds/src/createDb.ts) | Find default VPC subnets → create security group (port 5432) → create DB subnet group → launch PostgreSQL instance → wait + print endpoint |
+| [src/connectAndQuery.ts](05-rds/src/connectAndQuery.ts) | Resolve endpoint from SDK → connect via `pg` → CREATE TABLE → INSERT → SELECT, UPDATE, aggregate, transaction demo |
+| [src/cleanup.ts](05-rds/src/cleanup.ts) | Delete RDS instance (SkipFinalSnapshot) → wait for deletion → delete subnet group → delete security group |
+
+### Key concepts practiced
+
+- **RDS = managed database** — AWS patches the OS, runs backups, handles failover; you just connect
+- **DB Subnet Group** — tells RDS which subnets (and therefore which AZs) it can use; needs subnets in at least 2 AZs
+- **Security Group for RDS** — inbound rule on port 5432 (PostgreSQL); the DB is unreachable without it
+- **db.t3.micro** — smallest RDS instance class; Free Tier eligible (750 hours/month for 12 months)
+- **PubliclyAccessible: true** — allows connections from outside the VPC (needed for local testing)
+- **Multi-AZ** — standby replica in a second AZ for automatic failover; not used here (doubles cost)
+- **BackupRetentionPeriod: 0** — disables automated backups; saves cost and speeds up deletion for learning
+- **SkipFinalSnapshot** — allows deleting the instance without creating a final backup
+- **Parameterised queries** — `$1, $2` placeholders prevent SQL injection; always use these, never interpolate user input
+- **SSL** — RDS requires SSL by default; `rejectUnauthorized: false` skips cert validation (OK for learning)
+- **Transaction** — `BEGIN` / `COMMIT` / `ROLLBACK` ensures multiple writes succeed or fail together
+
+### Instance creation flow
+
+```
+createDb
+  ├── DescribeVpcs (isDefault=true)     -> default VPC + subnets
+  ├── CreateSecurityGroup               -> port 5432 open
+  ├── CreateDBSubnetGroup               -> registers subnets with RDS
+  ├── CreateDBInstance                  -> db.t3.micro PostgreSQL
+  └── waitUntilDBInstanceAvailable      -> prints endpoint + psql command
+```
+
+### Query demo flow
+
+```
+connectAndQuery
+  ├── DescribeDBInstances  -> resolve endpoint from SDK (no hardcoding)
+  ├── pg.Client.connect    -> SSL connection to RDS
+  ├── CREATE TABLE IF NOT EXISTS products
+  ├── INSERT (3 rows, parameterised)
+  ├── SELECT all / WHERE price < 100 / aggregate stats
+  ├── UPDATE stock (RETURNING)
+  └── Transaction: transfer stock between two products
+```
+
+### Resources created
+
+- Security group: `aws-learning-day05-rds-sg` (inbound TCP 5432)
+- DB subnet group: `aws-learning-day05-subnet-group`
+- RDS instance: `aws-learning-day05-db` (`db.t3.micro`, PostgreSQL 16, `learningdb` database)
+
+> Always run `npm run cleanup` after finishing — RDS instances accrue charges by the hour.
+
+### Further reading
+
+- [RDS PostgreSQL overview](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html)
+- [DB Subnet Groups](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html)
+- [Connecting to RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ConnectToPostgreSQLInstance.html)
+- [node-postgres (pg)](https://node-postgres.com/)
