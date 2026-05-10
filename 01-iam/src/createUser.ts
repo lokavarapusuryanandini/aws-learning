@@ -25,19 +25,31 @@ const USERNAME = `${LEARNING_PREFIX}-dev-user`;
 const S3_READ_ONLY_POLICY = {
   Version: "2012-10-17",
   Statement: [
-    {
-      Sid: "AllowS3ReadOnLearningBucket",
-      Effect: "Allow",
-      Action: [
-        "s3:GetObject",
-        "s3:ListBucket",
-      ],
-      Resource: [
-        "arn:aws:s3:::aws-learning-bucket-*",
-        "arn:aws:s3:::aws-learning-bucket-*/*",
-      ],
-    },
-  ],
+  {
+    Effect: "Allow",
+    Action: "s3:ListBucket",
+    Resource: "arn:aws:s3:::aws-learning-bucket-*"
+  },
+  {
+    Effect: "Allow",
+    Action: "s3:GetObject",
+    Resource: "arn:aws:s3:::aws-learning-bucket-*/*"
+  }
+],
+  // Statement: [
+  //   {
+  //     Sid: "AllowS3ReadOnLearningBucket",
+  //     Effect: "Allow",
+  //     Action: [
+  //       "s3:GetObject",
+  //       "s3:ListBucket",
+  //     ],
+  //     Resource: [
+  //       "arn:aws:s3:::aws-learning-bucket-*",
+  //       "arn:aws:s3:::aws-learning-bucket-*/*",
+  //     ],
+  //   },
+  // ],
 };
 
 async function createUser(): Promise<void> {
