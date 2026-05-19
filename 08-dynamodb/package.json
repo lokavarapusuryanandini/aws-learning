@@ -1,1 +1,22 @@
-{"name":"08-dynamodb","version":"1.0.0","description":"Day 8 - DynamoDB","scripts":{"build":"tsc","table":"ts-node src/createTable.ts","crud":"ts-node src/crudOperations.ts","gsi":"ts-node src/createGsi.ts","streams":"ts-node src/enableStreams.ts","cleanup":"ts-node src/cleanup.ts"},"dependencies":{"@aws-sdk/client-dynamodb":"^3.0.0","@aws-sdk/lib-dynamodb":"^3.0.0"},"devDependencies":{"@types/node":"^20.0.0","ts-node":"^10.9.0","typescript":"^5.0.0"}}
+{
+  "name": "08-dynamodb",
+  "version": "1.0.0",
+  "description": "Day 8 - DynamoDB (NoSQL key-value and document store)",
+  "scripts": {
+    "table": "ts-node src/createTable.ts",
+    "crud": "ts-node src/crudOperations.ts",
+    "gsi": "ts-node src/createGsi.ts",
+    "streams": "ts-node src/enableStreams.ts",
+    "cleanup": "ts-node src/cleanup.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "@aws-sdk/client-dynamodb-streams": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
