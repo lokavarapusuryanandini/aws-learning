@@ -1,1 +1,22 @@
-{"name":"07-apigateway","version":"1.0.0","description":"Day 7 - API Gateway","scripts":{"build":"tsc","deploy":"ts-node src/createApi.ts","test":"ts-node src/testApi.ts","cleanup":"ts-node src/cleanup.ts"},"dependencies":{"@aws-sdk/client-api-gateway":"^3.0.0","@aws-sdk/client-lambda":"^3.0.0"},"devDependencies":{"@types/node":"^20.0.0","ts-node":"^10.9.0","typescript":"^5.0.0"}}
+{
+  "name": "07-apigateway",
+  "version": "1.0.0",
+  "description": "Day 7 - API Gateway (REST API backed by Lambda)",
+  "scripts": {
+    "deploy": "ts-node src/createApi.ts",
+    "test": "ts-node src/testApi.ts",
+    "cleanup": "ts-node src/cleanup.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-api-gateway": "^3.0.0",
+    "@aws-sdk/client-lambda": "^3.0.0",
+    "@aws-sdk/client-iam": "^3.0.0",
+    "jszip": "^3.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/aws-lambda": "^8.10.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
