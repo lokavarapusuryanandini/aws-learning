@@ -1,1 +1,22 @@
-{"name":"10-cloudwatch","version":"1.0.0","description":"Day 10 - CloudWatch","scripts":{"build":"tsc","metrics":"ts-node src/putMetrics.ts","alarm":"ts-node src/createAlarm.ts","logs":"ts-node src/logInsights.ts","dashboard":"ts-node src/createDashboard.ts","cleanup":"ts-node src/cleanup.ts"},"dependencies":{"@aws-sdk/client-cloudwatch":"^3.0.0","@aws-sdk/client-cloudwatch-logs":"^3.0.0"},"devDependencies":{"@types/node":"^20.0.0","ts-node":"^10.9.0","typescript":"^5.0.0"}}
+{
+  "name": "10-cloudwatch",
+  "version": "1.0.0",
+  "description": "Day 10 - CloudWatch",
+  "scripts": {
+    "build": "tsc",
+    "metrics": "ts-node src/putMetrics.ts",
+    "alarm": "ts-node src/createAlarm.ts",
+    "logs": "ts-node src/logInsights.ts",
+    "dashboard": "ts-node src/createDashboard.ts",
+    "cleanup": "ts-node src/cleanup.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.0.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
