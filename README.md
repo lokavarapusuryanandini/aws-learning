@@ -382,3 +382,473 @@ connectAndQuery
 - [DB Subnet Groups](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html)
 - [Connecting to RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ConnectToPostgreSQLInstance.html)
 - [node-postgres (pg)](https://node-postgres.com/)
+
+---
+
+## 06 — Lambda (Serverless Functions)
+
+> **Folder:** [06-lambda/](06-lambda/)
+
+### What it covers
+
+Deploying a TypeScript Lambda function from Node.js using the SDK — compiling the handler, zipping it, creating an IAM execution role, deploying, invoking with several payloads, reading CloudWatch logs, and cleaning up.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run deploy` | Task 1 — Compile `handler.ts` → JS → ZIP, create IAM execution role, create/update Lambda function, wait for Active state |
+| `npm run invoke` | Task 2 — Invoke the function 6 times with different payloads (echo, reverse, upper, env, unknown, throw) and print results |
+| `npm run logs` | Task 3 — List log streams for the function, fetch and pretty-print events from the most recent stream |
+| `npm run cleanup` | Delete Lambda function → detach policies → delete IAM role |
+
+### Source files
+
+| File | Purpose |
+|------|---------|
+| [src/client.ts](06-lambda/src/client.ts) | Shared `LambdaClient`, `CloudWatchLogsClient`, `IAMClient`, and constants |
+| [src/handler.ts](06-lambda/src/handler.ts) | The Lambda function itself — compiled to `handler.js` and deployed in a ZIP |
+| [src/deployFunction.ts](06-lambda/src/deployFunction.ts) | Compile handler → ZIP with `jszip` → ensure IAM role → create/update Lambda function |
+| [src/invokeFunction.ts](06-lambda/src/invokeFunction.ts) | Invoke with `RequestResponse` (sync), decode Uint8Array payload, show `FunctionError` for thrown errors |
+| [src/viewLogs.ts](06-lambda/src/viewLogs.ts) | `DescribeLogStreams` (sorted by last event time) → `GetLogEvents` from most recent stream, colour-coded output |
+| [src/cleanup.ts](06-lambda/src/cleanup.ts) | Delete function → list + detach all attached policies → delete IAM role |
+
+### Key concepts practiced
+
+- **Deployment package** — Lambda code must be a ZIP file with `handler.js` at the root; `tsc` compiles `handler.ts` to JS
+- **Handler config** — `"handler.handler"` means: file `handler.js`, exported function `handler`
+- **IAM execution role** — Lambda assumes this role at runtime; needs `AWSLambdaBasicExecutionRole` to write logs
+- **Trust policy** — allows `lambda.amazonaws.com` to call `sts:AssumeRole`
+- **IAM propagation delay** — new roles take ~10 seconds before Lambda can use them; always add a wait after creation
+- **`waitUntilFunctionActive`** — new functions go `Pending → Active`; wait before invoking
+- **`waitUntilFunctionUpdated`** — code updates are async; wait before invoking the new version
+- **`InvocationType: "RequestResponse"`** — synchronous; caller blocks until function returns (max 15 minutes)
+- **`InvocationType: "Event"`** — asynchronous; Lambda queues it and returns HTTP 202 immediately
+- **Response payload** — returned as `Uint8Array`; decode with `TextDecoder` → parse as JSON
+- **`FunctionError`** — set to `"Handled"` when your code throws; payload contains `errorMessage` + `stackTrace`
+- **CloudWatch log group** — automatically created at `/aws/lambda/<name>` when Lambda first runs
+- **Log streams** — one stream per execution environment instance; cold start = new stream
+- **START / END / REPORT lines** — Lambda automatically writes these around every invocation; REPORT shows billed duration + memory used
+- **`LogType: "Tail"`** — returns last 4 KB of logs inline in the invoke response (handy for quick debugging)
+
+### Handler actions
+
+The deployed function supports these `action` values:
+
+| `action` | `input` | Result |
+|----------|---------|--------|
+| `echo` | any string | Returns the string unchanged |
+| `reverse` | any string | Returns the string reversed |
+| `upper` | any string | Returns the string uppercased |
+| `env` | — | Returns environment variables (custom + Lambda built-ins) |
+| `throw` | — | Throws an error; demonstrates `FunctionError` handling |
+
+### Deployment flow
+
+```
+deployFunction
+  ├── tsc src/handler.ts -> dist/lambda-build/handler.js
+  ├── jszip: handler.js -> deployment.zip (in memory)
+  ├── IAM: GetRole (exists?) -> CreateRole + AttachPolicy + wait 10s
+  └── Lambda: GetFunction (exists?)
+        ├── no  -> CreateFunction + waitUntilFunctionActive
+        └── yes -> UpdateFunctionCode + waitUntilFunctionUpdated
+```
+
+### Resources created
+
+- IAM role: `aws-learning-day06-lambda-role` (with `AWSLambdaBasicExecutionRole`)
+- Lambda function: `aws-learning-day06` (`nodejs20.x`, 128 MB, 10s timeout)
+- CloudWatch log group: `/aws/lambda/aws-learning-day06` (persists after cleanup — delete manually)
+
+> Always run `npm run cleanup` after finishing.
+
+### Further reading
+
+- [Lambda programming model](https://docs.aws.amazon.com/lambda/latest/dg/foundation-progmodel.html)
+- [Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
+- [Invoking Lambda functions](https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html)
+- [CloudWatch Logs for Lambda](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-cloudwatchlogs.html)
+
+---
+
+## 07 — API Gateway (REST API)
+
+> **Folder:** [07-apigateway/](07-apigateway/)
+
+### What it covers
+
+Building a REST API in API Gateway backed by a Lambda function using **Lambda Proxy Integration** — a single Lambda handles all routes internally.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run deploy` | Task 1 — Compile `handler.ts`, ZIP it, create IAM role + Lambda function, create REST API with `{proxy+}` resource, add Lambda permission, deploy to `dev` stage |
+| `npm run test` | Task 2 — Discover the invoke URL via SDK, make 7 real HTTP requests (GET, POST, path params, 404) and print responses |
+| `npm run cleanup` | Delete REST API → Lambda function → IAM role |
+
+### Source files
+
+| File | Purpose |
+|------|---------|
+| [src/client.ts](07-apigateway/src/client.ts) | Shared `APIGatewayClient`, `LambdaClient`, `IAMClient`, constants |
+| [src/handler.ts](07-apigateway/src/handler.ts) | Lambda function for API GW — routes GET /hello, POST /echo, GET /info, GET /items/:id, POST /items, 404 |
+| [src/createApi.ts](07-apigateway/src/createApi.ts) | Build Lambda → REST API with `{proxy+}` catch-all → Lambda permission → deploy stage |
+| [src/testApi.ts](07-apigateway/src/testApi.ts) | Find API by name via SDK, make HTTP calls with Node `https` module |
+| [src/cleanup.ts](07-apigateway/src/cleanup.ts) | `DeleteRestApi` (removes everything) → delete Lambda → delete IAM role |
+
+### Key concepts practiced
+
+- **REST API** — the API Gateway resource holding your API definition (resources, methods, integrations, deployments)
+- **Resource** — a URL path segment; `{proxy+}` = greedy proxy, catches any path under `/`
+- **Method** — the HTTP verb on a resource; `ANY` matches all verbs in one rule
+- **Lambda Proxy Integration** — API GW passes the full HTTP request to Lambda; Lambda controls the entire response
+- **`integrationHttpMethod: "POST"`** — Lambda invocations always use POST internally, regardless of what the caller sends
+- **Deployment** — a snapshot of your API configuration; required before the API is reachable
+- **Stage** — a named live environment (`dev`, `prod`) pointing to a Deployment; part of the invoke URL
+- **Invoke URL** — `https://{apiId}.execute-api.{region}.amazonaws.com/{stage}`
+- **Lambda permission** — resource-based policy that allows `apigateway.amazonaws.com` to invoke the function
+- **`event.path`** — the URL path in the Lambda event (`/hello`, `/items/42`); used for routing
+- **`event.body`** — raw string; must `JSON.parse()` it; typed as `string | null`
+- **Proxy handler return** — must be `{ statusCode, headers, body (string) }`; `body` must be a string
+
+### API routes
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/hello?name=X` | Returns a greeting |
+| POST | `/echo` | Echoes the request body + metadata |
+| GET | `/info` | Returns stage, IP, user-agent, function name |
+| GET | `/items/:id` | Simulated item fetch with path param |
+| POST | `/items` | Simulated item creation |
+| * | `/*` | 404 with list of available routes |
+
+### Deploy flow
+
+```
+createApi
+  ├── tsc handler.ts -> dist/lambda-build/handler.js
+  ├── jszip -> deployment.zip
+  ├── IAM: CreateRole (trust: lambda) + AttachPolicy + wait 10s
+  ├── Lambda: CreateFunction / UpdateFunctionCode + waitUntilFunctionActive
+  ├── APIGW: CreateRestApi
+  ├── APIGW: GetResources -> root "/" ID
+  ├── APIGW: CreateResource "{proxy+}"
+  ├── APIGW: PutMethod ANY + PutIntegration AWS_PROXY (root + {proxy+})
+  ├── Lambda: AddPermission (principal: apigateway.amazonaws.com)
+  └── APIGW: CreateDeployment (stageName: "dev")
+```
+
+### Resources created
+
+- IAM role: `aws-learning-day07-lambda-role`
+- Lambda function: `aws-learning-day07`
+- REST API: `aws-learning-day07`
+- Stage: `dev`
+
+> Always run `npm run cleanup` after finishing.
+
+### Further reading
+
+- [API Gateway REST API concepts](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-basic-concept.html)
+- [Lambda proxy integration](https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html)
+- [Stages and deployments](https://docs.aws.amazon.com/apigateway/latest/developerguide/rest-api-publish.html)
+
+---
+
+## 08 — DynamoDB (NoSQL)
+
+> **Folder:** [08-dynamodb/](08-dynamodb/)
+
+### What it covers
+
+Creating a DynamoDB table, performing all CRUD operations + batch + transactions via the `DynamoDBDocumentClient`, adding a Global Secondary Index, and reading from DynamoDB Streams.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run table` | Task 1 — Create `aws-learning-day08-orders` table (partition key: `userId`, sort key: `orderId`, PAY_PER_REQUEST), wait for ACTIVE |
+| `npm run crud` | Task 2 — PutItem, GetItem with projection, UpdateItem with condition, Query, BatchWriteItem, TransactWriteItems, Scan (anti-pattern demo), DeleteItem |
+| `npm run gsi` | Task 3 — Add `status-createdAt-index` GSI via `UpdateTable`, wait for ACTIVE, query the GSI to find all pending orders sorted by date |
+| `npm run streams` | Task 4 — Enable `NEW_AND_OLD_IMAGES` stream, generate INSERT/MODIFY/DELETE records, read them back using `GetShardIterator` + `GetRecords` |
+| `npm run cleanup` | Delete the table (removes data, GSIs, and stream in one call) |
+
+### Source files
+
+| File | Purpose |
+|------|---------|
+| [src/client.ts](08-dynamodb/src/client.ts) | `DynamoDBClient` (low-level) + `DynamoDBDocumentClient` (auto-marshal/unmarshal), table constants |
+| [src/createTable.ts](08-dynamodb/src/createTable.ts) | `CreateTableCommand` with composite PK, PAY_PER_REQUEST billing, `waitUntilTableExists` |
+| [src/crudOperations.ts](08-dynamodb/src/crudOperations.ts) | Full CRUD + Query + Scan + BatchWrite + TransactWrite via `DynamoDBDocumentClient` |
+| [src/createGsi.ts](08-dynamodb/src/createGsi.ts) | `UpdateTable` to add GSI, poll until GSI ACTIVE, query by `status` + `createdAt` range |
+| [src/enableStreams.ts](08-dynamodb/src/enableStreams.ts) | Enable streams, write records, `DescribeStream` → `GetShardIterator` → `GetRecords` |
+| [src/cleanup.ts](08-dynamodb/src/cleanup.ts) | `DeleteTableCommand` + `waitUntilTableNotExists` |
+
+### Key concepts practiced
+
+- **Partition key** — determines the physical partition; high cardinality = even distribution
+- **Sort key** — enables range queries within a partition (`begins_with`, `between`, `>`, `<`)
+- **`DynamoDBDocumentClient`** — wraps raw client; automatically converts JS types to DynamoDB `AttributeValue` format and back
+- **PAY_PER_REQUEST** — on-demand billing; no capacity planning; scales instantly; pay per read/write
+- **`PutItem`** — insert or fully replace an item (upsert by primary key)
+- **`UpdateItem`** — modify specific attributes without rewriting the whole item (cheaper + atomic)
+- **`ConditionExpression`** — only perform write if a condition is true; prevents lost updates in concurrent access
+- **`UpdateExpression`** — `SET`, `REMOVE`, `ADD`, `DELETE` attribute changes
+- **`ProjectionExpression`** — return only specific attributes; saves read cost and bandwidth
+- **`Query`** — reads items with the SAME partition key; can filter on sort key; efficient O(log n)
+- **`Scan`** — reads ALL items; O(n); use only for infrequent full-table operations or on small tables
+- **`BatchWriteItem`** — up to 25 puts/deletes in one network round-trip
+- **`TransactWriteItems`** — up to 100 operations; all succeed or all fail (ACID transactions)
+- **GSI** — secondary index with a different partition key; enables queries on any attribute; eventually consistent
+- **GSI projection** — `ALL` copies every attribute; `KEYS_ONLY` copies only key attributes
+- **DynamoDB Streams** — ordered log of item changes; records available for 24 hours
+- **`StreamViewType: NEW_AND_OLD_IMAGES`** — captures both before and after state of every change
+- **Shard iterator** — cursor into a stream shard; `TRIM_HORIZON` = start from oldest, `LATEST` = only new records
+
+### Table schema
+
+```
+Table: aws-learning-day08-orders
+  PK:  userId   (String) — partition key
+  SK:  orderId  (String) — sort key
+  GSI: status-createdAt-index
+         Hash:  status    (String)
+         Range: createdAt (String / ISO 8601)
+         Projection: ALL
+```
+
+### Resources created
+
+- DynamoDB table: `aws-learning-day08-orders`
+- GSI: `status-createdAt-index`
+- Stream (enabled but no persistent resource to clean up)
+
+> Always run `npm run cleanup` after finishing.
+
+### Further reading
+
+- [DynamoDB core concepts](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.CoreComponents.html)
+- [DynamoDBDocumentClient](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/modules/_aws_sdk_lib_dynamodb.html)
+- [Query vs Scan](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-query-scan.html)
+- [GSI design patterns](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html)
+- [DynamoDB Streams](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html)
+
+---
+
+## 09 — SQS + SNS (Messaging)
+
+> **Folder:** [09-sqs-sns/](09-sqs-sns/)
+
+### What it covers
+
+SQS queues (send/receive/delete, long polling, visibility timeout), SNS topics (publish/subscribe), the fan-out pattern, message filtering, and Dead Letter Queues.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run queue` | Task 1 — Create standard queue, send single + batch messages, receive with long polling, acknowledge via delete, show queue stats |
+| `npm run topic` | Task 2 — Create SNS topic, subscribe an SQS queue, add access policy, publish 3 messages, receive from queue and show SNS envelope |
+| `npm run fanout` | Task 3 — One SNS topic → 3 SQS queues (order-processor, email-notifier, analytics); analytics has a filter policy; show all queues receiving the same event |
+| `npm run dlq` | Task 4 — Create DLQ + main queue with `RedrivePolicy` (maxReceiveCount=3, 5s timeout); simulate 3 failures; message moves to DLQ |
+| `npm run cleanup` | List queues by prefix → delete; list topics → filter by name → delete |
+
+### Key concepts practiced
+
+- **Standard vs FIFO** — standard = high throughput, at-least-once, best-effort order; FIFO = exactly-once, strict order
+- **VisibilityTimeout** — message stays hidden from other consumers for N seconds after a receive
+- **Long polling** — `WaitTimeSeconds > 0` waits up to 20s; reduces empty poll costs vs short polling
+- **ReceiptHandle** — token needed to `DeleteMessage`; expires after visibility timeout
+- **BatchSend** — `SendMessageBatch` up to 10 messages per API call
+- **SNS envelope** — when SNS delivers to SQS, the message body is an SNS JSON wrapper; `JSON.parse(body).Message` gets the original payload
+- **SQS access policy** — queue must explicitly allow `sqs:SendMessage` from the SNS topic ARN
+- **Fan-out** — publish once to SNS, all subscribed queues receive simultaneously; decouple producers from consumers
+- **FilterPolicy** — subscriber-level attribute filter; e.g. only receive messages with `orderValue >= 100`
+- **Dead Letter Queue** — after `maxReceiveCount` failed receives, SQS moves the message to the DLQ on the next visibility timeout expiry
+- **MessageAttributes** — metadata on the message (key-value); useful for filtering without parsing the body
+
+### Resources created
+
+- SQS queues: `aws-learning-day09-main`, `aws-learning-day09-sns-subscriber`, `aws-learning-day09-dlq`, `aws-learning-day09-dlq-demo-main`, `aws-learning-day09-order-*` (3 fan-out queues)
+- SNS topics: `aws-learning-day09-topic`, `aws-learning-day09-orders`
+
+> Always run `npm run cleanup` after finishing. Note: deleted queue names cannot be reused for 60 seconds.
+
+### Further reading
+
+- [SQS concepts](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html)
+- [SNS pub/sub](https://docs.aws.amazon.com/sns/latest/dg/welcome.html)
+- [Fan-out pattern](https://docs.aws.amazon.com/sns/latest/dg/sns-common-scenarios.html)
+- [DLQ setup](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html)
+
+---
+
+## 10 — CloudWatch (Metrics, Alarms, Logs, Dashboards)
+
+> **Folder:** [10-cloudwatch/](10-cloudwatch/)
+
+### What it covers
+
+Publishing custom metrics, creating metric alarms (average and P99), writing structured logs and querying them with Logs Insights, and building a multi-widget CloudWatch dashboard.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run metrics` | Task 1 — Simulate 10 minutes of `ApiLatency`, `ErrorCount`, `RequestCount` datapoints; query back with `GetMetricData` including a math expression for error rate |
+| `npm run alarm` | Task 2 — Create avg latency > 500ms alarm + P99 > 1000ms alarm; demo state transitions with `SetAlarmState` |
+| `npm run logs` | Task 3 — Create log group (7-day retention), push 50 structured JSON events, run 3 Logs Insights queries (error count by path, avg latency, recent errors) |
+| `npm run dashboard` | Task 4 — Create dashboard with line chart, single-value widgets, alarm status, and embedded Logs Insights query |
+| `npm run cleanup` | Delete alarms → delete log group → delete dashboard |
+
+### Key concepts practiced
+
+- **Namespace** — logical grouping; `"MyApp/Prod"` vs `"aws-learning/Day10"`
+- **Dimensions** — key-value pairs that qualify a metric; you can query with different dimension combinations
+- **Period** — aggregation window in seconds (60, 300); must be a multiple of 60 for standard resolution
+- **Statistic** — `Average`, `Sum`, `Min`, `Max`, `SampleCount`, `p99`, `p95`, etc.
+- **GetMetricData math expression** — combine metrics: `"(errors / requests) * 100"`
+- **Alarm states** — `OK`, `ALARM`, `INSUFFICIENT_DATA`
+- **EvaluationPeriods + DatapointsToAlarm** — M-of-N alarm: alarm if 2 out of 3 periods breach threshold
+- **TreatMissingData** — `notBreaching` (default-OK), `breaching` (default-ALARM), `ignore`, `missing`
+- **SetAlarmState** — manually override state for testing notification integrations
+- **Extended statistics** — `p99`, `p95`, etc. for tail latency alarms
+- **Log group retention** — always set a retention policy; default is "never expire" (accumulates cost)
+- **PutLogEvents** — events must be sorted by timestamp ascending; max 1 MB per batch
+- **Logs Insights** — `fields`, `filter`, `parse`, `stats`, `sort`, `limit`; runs against log groups
+- **Dashboard body** — JSON string with `widgets` array; 24-column grid; widget types: `metric`, `alarm`, `text`, `log`
+
+### Resources created
+
+- Custom metric namespace: `aws-learning/Day10`
+- Alarms: `aws-learning-day10-high-latency`, `aws-learning-day10-high-latency-p99`
+- Log group: `/aws-learning/day10` (7-day retention)
+- Dashboard: `aws-learning-day10`
+
+> Always run `npm run cleanup` after finishing.
+
+### Further reading
+
+- [CloudWatch custom metrics](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/publishingMetrics.html)
+- [Metric math](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/using-metric-math.html)
+- [Logs Insights query syntax](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html)
+- [Dashboard body format](https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html)
+
+---
+
+## 11 — CloudFormation (Infrastructure as Code)
+
+> **Folder:** [11-cloudformation/](11-cloudformation/)
+
+### What it covers
+
+Defining infrastructure as a JSON template, deploying a stack, updating it via a change set (with preview), and detecting configuration drift.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run deploy` | Task 1 — Define template (S3 bucket + SSM parameter, Parameters, Outputs, Fn::Sub, Fn::GetAtt), create stack, wait for `CREATE_COMPLETE`, print outputs + resources |
+| `npm run update` | Task 2 — Create change set (suspend versioning), preview changes (Action, Replacement), execute change set, wait for `UPDATE_COMPLETE` |
+| `npm run drift` | Task 3 — Trigger drift detection, poll until `DETECTION_COMPLETE`, show per-resource drift status (IN_SYNC / MODIFIED / DELETED) |
+| `npm run cleanup` | Delete stack → wait for `DELETE_COMPLETE` |
+
+### Key concepts practiced
+
+- **Template** — declarative JSON/YAML; describes desired state; CloudFormation diffs and applies changes
+- **Parameters** — values passed at deploy/update time; `AllowedValues` for validation
+- **Resources** — the AWS resources to create; only key supported resource types need to be declared
+- **`Ref`** — returns the primary identifier of a resource (bucket name, queue URL, etc.)
+- **`Fn::GetAtt`** — returns a specific attribute of a resource (bucket ARN, etc.)
+- **`Fn::Sub`** — string substitution: `${AWS::AccountId}`, `${AWS::Region}`, `${StackName}`
+- **Outputs** — values exported from the stack; viewable in console; importable by other stacks via `Fn::ImportValue`
+- **DeletionPolicy** — `Delete` (default), `Retain` (keep resource after stack delete), `Snapshot`
+- **Change set** — preview of planned changes before applying; shows `Add`, `Modify`, `Remove` + whether resource is replaced
+- **Replacement** — `True` = resource must be re-created (e.g. renaming an S3 bucket); causes downtime
+- **Drift** — resource's actual config differs from CloudFormation's expected config (manual change outside CFN)
+- **Rollback** — if a resource fails to create/update, CloudFormation rolls back to the last stable state
+
+### Resources created
+
+- S3 bucket: `aws-learning-day11-{accountId}` (versioned)
+- SSM parameter: `/aws-learning/day11/bucket-name`
+
+> Always run `npm run cleanup` after finishing. Note: S3 bucket must be empty before stack deletion.
+
+### Further reading
+
+- [CloudFormation template anatomy](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html)
+- [Change sets](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-changesets.html)
+- [Drift detection](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-drift.html)
+- [Intrinsic functions](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference.html)
+
+---
+
+## 12 — CDK (Cloud Development Kit)
+
+> **Folder:** [12-cdk/](12-cdk/)
+
+### What it covers
+
+Writing infrastructure as TypeScript using AWS CDK — L1/L2/L3 constructs, automatic IAM generation, stack synthesis, and deploying a stack with S3 + Lambda + Function URL.
+
+### Run order
+
+```bash
+cd 12-cdk
+npm install
+npm run synth    # generate CloudFormation template (no AWS calls)
+npm run diff     # compare with deployed stack
+npm run deploy   # deploy to AWS
+# curl the Function URL printed in the output
+npm run destroy  # delete all stack resources
+```
+
+> **Prerequisite:** CDK bootstrap must be done once per account/region: `npx cdk bootstrap`
+
+### Source files
+
+| File | Purpose |
+|------|---------|
+| [bin/app.ts](12-cdk/bin/app.ts) | CDK App entry point — instantiates `Day12Stack` with region + tags |
+| [lib/day12-stack.ts](12-cdk/lib/day12-stack.ts) | Stack definition — S3 Bucket (L2), Lambda (L2, inline code), Function URL, CfnOutputs |
+| [cdk.json](12-cdk/cdk.json) | CDK CLI config — specifies the `app` command (`ts-node bin/app.ts`) |
+
+### Key concepts practiced
+
+- **App → Stack → Construct tree** — CDK synthesises the tree into a CloudFormation template
+- **L1 constructs (`Cfn*`)** — 1:1 CloudFormation resource mapping; all properties explicit
+- **L2 constructs** — higher-level; smart defaults (encryption, block public access, log permissions)
+- **L3 / Patterns** — pre-built combinations (e.g. `ApplicationLoadBalancedFargateService`)
+- **Automatic IAM** — CDK generates minimal IAM policies when you call `bucket.grantRead(fn)`
+- **`RemovalPolicy.DESTROY`** — delete the resource when the stack is destroyed (default: RETAIN)
+- **`autoDeleteObjects: true`** — CDK deploys a helper Lambda to empty the bucket before deletion
+- **`Code.fromInline`** — embed JS directly in the template; use `Code.fromAsset` for real projects
+- **Function URL** — direct HTTPS endpoint on Lambda; no API Gateway needed; free beyond Lambda cost
+- **`CfnOutput`** — declares a CloudFormation Output; printed by `cdk deploy` and visible in console
+- **`cdk synth`** — synthesise without deploying; inspect generated template in `cdk.out/`
+- **`cdk diff`** — compare deployed stack with current CDK code (like `git diff` for infrastructure)
+- **CDK bootstrap** — one-time setup per account/region; deploys a bootstrap stack with an S3 bucket for CDK assets
+
+### Stack contents
+
+```
+Day12Stack
+  ├── LearningBucket (s3.Bucket L2)
+  │     versioned, encrypted, block-public, DESTROY policy, auto-empty
+  ├── LearningFunction (lambda.Function L2)
+  │     nodejs20.x, inline code, reads BUCKET_NAME from env
+  │     IAM role auto-created; bucket.grantRead() adds s3:GetObject + s3:ListBucket
+  ├── LearningFunctionFunctionUrl
+  │     authType: NONE, CORS: *
+  └── Outputs: BucketName, FunctionArn, FunctionUrl
+```
+
+### Further reading
+
+- [CDK concepts](https://docs.aws.amazon.com/cdk/v2/guide/core_concepts.html)
+- [L1/L2/L3 constructs](https://docs.aws.amazon.com/cdk/v2/guide/constructs.html)
+- [CDK API reference (TypeScript)](https://docs.aws.amazon.com/cdk/api/v2/)
+- [CDK bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
