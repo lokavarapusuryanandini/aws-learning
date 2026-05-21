@@ -852,3 +852,165 @@ Day12Stack
 - [L1/L2/L3 constructs](https://docs.aws.amazon.com/cdk/v2/guide/constructs.html)
 - [CDK API reference (TypeScript)](https://docs.aws.amazon.com/cdk/api/v2/)
 - [CDK bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
+
+## 13 — ECS + ECR (Containers)
+
+> **Folder:** [13-ecs-ecr/](13-ecs-ecr/)
+
+### What it covers
+
+Building a Docker container, pushing it to Amazon ECR, creating an ECS cluster, registering a task definition, and running the container on ECS using Fargate.
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run ecr` | Task 1 — Create an ECR repository for storing Docker images |
+| `npm run push` | Task 2 — Authenticate Docker with ECR, build the app image, tag it, and push it to ECR |
+| `npm run cluster` | Task 3 — Create an ECS cluster |
+| `npm run task` | Task 4 — Register a Fargate task definition and run the container on ECS |
+| `npm run cleanup` | Delete ECS tasks → cluster → ECR repository and images |
+
+### Source files
+
+| File | Purpose |
+|------|---------|
+| [src/createRepository.ts](13-ecs-ecr/src/createRepository.ts) | Create ECR repository and print repository URI |
+| [src/pushImage.ts](13-ecs-ecr/src/pushImage.ts) | Login Docker to ECR, build image, tag image, push image |
+| [src/createCluster.ts](13-ecs-ecr/src/createCluster.ts) | Create ECS cluster |
+| [src/runTask.ts](13-ecs-ecr/src/runTask.ts) | Register Fargate task definition and run ECS task |
+| [src/cleanup.ts](13-ecs-ecr/src/cleanup.ts) | Stop tasks → delete cluster → delete ECR repository |
+
+### App structure
+
+```text
+13-ecs-ecr/
+├── app/
+│   ├── server.js
+│   ├── package.json
+│   └── Dockerfile
+├── src/
+│   ├── createRepository.ts
+│   ├── pushImage.ts
+│   ├── createCluster.ts
+│   ├── runTask.ts
+│   └── cleanup.ts
+
+### Key concepts practiced
+
+- **Docker image** — packaged application with code, runtime, dependencies, and OS layers
+- **Dockerfile** — instructions used to build the image
+- **Container** — running instance of a Docker image
+- **ECR (Elastic Container Registry)** — private AWS Docker registry
+- **ECS (Elastic Container Service)** — AWS container orchestration service
+- **Cluster** — logical group where ECS tasks/services run
+- **Task Definition** — blueprint describing containers, CPU, memory, ports, image, and networking
+- **Task** — running instance of a task definition
+- **Fargate** — serverless compute engine for containers; AWS manages the servers
+- **EC2 launch type** — you manage EC2 servers yourself and ECS schedules containers on them
+- **awsvpc network mode** — each Fargate task gets its own ENI and private IP
+- **Execution Role** — IAM role ECS uses to pull images from ECR and send logs
+- **Public subnet** — subnet with internet access; required when assigning public IPs
+- **Port mapping** — maps container port to accessible network port
+
+### Docker build flow
+
+```bash
+# Build image from Dockerfile
+docker build -t aws-learning-day13 ./app
+
+# Run locally
+docker run -p 3000:3000 aws-learning-day13
+```
+
+### ECR push flow
+
+```text
+Local Docker Image
+        │
+        ├── docker login to ECR
+        ├── docker tag
+        └── docker push
+                │
+                ▼
+        Amazon ECR Repository
+```
+
+### ECS Fargate flow
+
+```text
+ECS Cluster
+    │
+    └── RunTask
+            │
+            ├── Task Definition
+            │      ├── CPU / Memory
+            │      ├── Container Image (ECR)
+            │      ├── Port Mapping
+            │      └── Execution Role
+            │
+            └── Fargate launches container
+```
+
+### Resources created
+
+- ECR repository: `aws-learning-day13`
+- ECS cluster: `aws-learning-day13-cluster`
+- ECS task definition: `aws-learning-day13-task`
+- ECS task: running container from ECR image
+- IAM role: `ecsTaskExecutionRole`
+
+### Important Fargate requirements
+
+- `networkMode` must be `"awsvpc"`
+- `requiresCompatibilities` must include `"FARGATE"`
+
+#### Task definition requires
+
+- CPU
+- Memory
+- Execution role ARN
+
+#### RunTask requires
+
+- Subnet IDs
+- Public IP assignment (for internet access)
+
+- Docker image must already exist in ECR
+
+### Common errors practiced
+
+| Error | Cause |
+|---|---|
+| `No Container Instances were found` | Tried EC2 launch type without ECS container instances |
+| `Fargate requires execution role ARN` | Missing `executionRoleArn` |
+| `unable to assume the role` | Incorrect IAM trust policy or missing permissions |
+| `Cannot find module '/app/server.js'` | Dockerfile copied files incorrectly |
+| `Docker pipe error` | Docker Desktop not running |
+
+### Example task definition settings
+
+```ts
+networkMode: "awsvpc",
+requiresCompatibilities: ["FARGATE"],
+cpu: "256",
+memory: "512"
+```
+
+### Resources cleanup order
+
+```text
+1. Stop running ECS tasks
+2. Delete ECS cluster
+3. Delete ECR images
+4. Delete ECR repository
+```
+
+> Always run `npm run cleanup` after finishing — ECR images and ECS resources can incur charges.
+
+### Further reading
+
+- [Amazon ECS Documentation](https://docs.aws.amazon.com/ecs/)
+- [Amazon ECR Documentation](https://docs.aws.amazon.com/ecr/)
+- [AWS Fargate Documentation](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html)
+- [Task Definitions](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html)
