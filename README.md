@@ -898,20 +898,20 @@ Building a Docker container, pushing it to Amazon ECR, creating an ECS cluster, 
 
 ### Key concepts practiced
 
-- **Docker image** — packaged application with code, runtime, dependencies, and OS layers
-- **Dockerfile** — instructions used to build the image
-- **Container** — running instance of a Docker image
-- **ECR (Elastic Container Registry)** — private AWS Docker registry
-- **ECS (Elastic Container Service)** — AWS container orchestration service
-- **Cluster** — logical group where ECS tasks/services run
-- **Task Definition** — blueprint describing containers, CPU, memory, ports, image, and networking
-- **Task** — running instance of a task definition
-- **Fargate** — serverless compute engine for containers; AWS manages the servers
-- **EC2 launch type** — you manage EC2 servers yourself and ECS schedules containers on them
-- **awsvpc network mode** — each Fargate task gets its own ENI and private IP
-- **Execution Role** — IAM role ECS uses to pull images from ECR and send logs
-- **Public subnet** — subnet with internet access; required when assigning public IPs
-- **Port mapping** — maps container port to accessible network port
+- Docker image — packaged application with code, runtime, dependencies, and OS layers
+- Dockerfile — instructions used to build the image
+- Container — running instance of a Docker image
+- ECR (Elastic Container Registry) — private AWS Docker registry
+- ECS (Elastic Container Service) — AWS container orchestration service
+- Cluster — logical group where ECS tasks/services run
+- Task Definition — blueprint describing containers, CPU, memory, ports, image, and networking
+- Task — running instance of a task definition
+- Fargate — serverless compute engine for containers; AWS manages the servers
+- EC2 launch type — you manage EC2 servers yourself and ECS schedules containers on them
+- awsvpc network mode — each Fargate task gets its own ENI and private IP
+- Execution Role — IAM role ECS uses to pull images from ECR and send logs
+- Public subnet — subnet with internet access; required when assigning public IPs
+- Port mapping — maps container port to accessible network port
 
 ### Docker build flow
 
@@ -1014,3 +1014,87 @@ memory: "512"
 - [Amazon ECR Documentation](https://docs.aws.amazon.com/ecr/)
 - [AWS Fargate Documentation](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html)
 - [Task Definitions](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html)
+
+## 14 — Secrets Manager + KMS
+
+> **Folder:** `14-secrets-kms/`
+
+### What it covers
+
+Managing application secrets securely using AWS Secrets Manager and encrypting/decrypting data using AWS KMS (Key Management Service).
+
+### Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run secret` | Task 1 — Create and store a secret in AWS Secrets Manager |
+| `npm run kms` | Task 2 — Create a KMS key, encrypt plaintext, and decrypt it back |
+| `npm run rotate` | Task 3 — Rotate/update an existing secret with a new version |
+| `npm run cleanup` | Delete the created secret |
+
+### Source files
+
+| File | Purpose |
+|------|---------|
+| `src/storeSecret.ts` | Create a secret and store credentials securely in Secrets Manager |
+| `src/encryptDecrypt.ts` | Create a KMS key and perform encryption/decryption |
+| `src/rotation.ts` | Update the secret value to simulate secret rotation |
+| `src/cleanup.ts` | Delete the created secret |
+| `tsconfig.json` | TypeScript configuration |
+
+### Key concepts practiced
+
+- **Secrets Manager** — managed service for securely storing secrets like passwords, API keys, and tokens
+- **KMS (Key Management Service)** — managed encryption service for creating and controlling encryption keys
+- **Secret rotation** — updating secret values periodically for better security
+- **Customer managed keys** — KMS keys created and controlled by your AWS account
+- **Encryption** — converting plaintext into ciphertext using a cryptographic key
+- **Decryption** — converting encrypted ciphertext back into readable plaintext
+- **Envelope encryption** — AWS services commonly encrypt data using data keys protected by KMS keys
+- **IAM permissions** — access to secrets and keys is controlled through IAM policies
+- **Secrets versioning** — each secret update creates a new version automatically
+- **Force delete** — removes secrets immediately without recovery window
+
+### Secrets Manager flow
+
+```text
+Application
+     │
+     ├── CreateSecret
+     │
+     ▼
+AWS Secrets Manager
+     │
+     ├── Stores encrypted secret
+     └── Maintains secret versions
+```
+
+### KMS encryption flow
+
+```text
+Plaintext
+    │
+    ├── EncryptCommand
+    │
+    ▼
+Ciphertext
+    │
+    ├── DecryptCommand
+    │
+    ▼
+Plaintext
+```
+
+### Resources created
+
+- Secret: `aws-learning-day14-secret`
+- KMS Key: dynamically generated customer-managed encryption key
+
+> Always run `npm run cleanup` after finishing — unused secrets and KMS keys may incur charges.
+
+### Further reading
+
+- AWS Secrets Manager Documentation
+- AWS KMS Documentation
+- Envelope Encryption
+- Secret Rotation Best Practices
