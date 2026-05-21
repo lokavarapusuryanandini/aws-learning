@@ -895,23 +895,31 @@ Building a Docker container, pushing it to Amazon ECR, creating an ECS cluster, 
 │   ├── createCluster.ts
 │   ├── runTask.ts
 │   └── cleanup.ts
+```
 
-### Key concepts practiced
+## Key concepts practiced
 
-- Docker image — packaged application with code, runtime, dependencies, and OS layers
-- Dockerfile — instructions used to build the image
-- Container — running instance of a Docker image
-- ECR (Elastic Container Registry) — private AWS Docker registry
-- ECS (Elastic Container Service) — AWS container orchestration service
-- Cluster — logical group where ECS tasks/services run
-- Task Definition — blueprint describing containers, CPU, memory, ports, image, and networking
-- Task — running instance of a task definition
-- Fargate — serverless compute engine for containers; AWS manages the servers
-- EC2 launch type — you manage EC2 servers yourself and ECS schedules containers on them
-- awsvpc network mode — each Fargate task gets its own ENI and private IP
-- Execution Role — IAM role ECS uses to pull images from ECR and send logs
-- Public subnet — subnet with internet access; required when assigning public IPs
-- Port mapping — maps container port to accessible network port
+### Docker fundamentals
+- **Docker image** — packaged application with code, runtime, dependencies, and OS layers  
+- **Dockerfile** — instructions used to build the image  
+- **Container** — running instance of a Docker image  
+
+### AWS Container Services
+- **ECR (Elastic Container Registry)** — private AWS Docker registry for storing images  
+- **ECS (Elastic Container Service)** — AWS service for running and managing containers  
+- **Fargate** — serverless compute engine for containers; AWS manages the servers  
+- **EC2 launch type** — you manage EC2 servers yourself and ECS schedules containers on them  
+
+### ECS Core Components
+- **Cluster** — logical group where ECS tasks/services run  
+- **Task Definition** — blueprint describing containers, CPU, memory, ports, image, and networking  
+- **Task** — running instance of a task definition  
+- **Execution Role** — IAM role ECS uses to pull images from ECR and send logs  
+
+### Networking
+- **awsvpc network mode** — each Fargate task gets its own ENI and private IP  
+- **Public subnet** — subnet with internet access; required when assigning public IPs  
+- **Port mapping** — maps container port to accessible network port  
 
 ### Docker build flow
 
