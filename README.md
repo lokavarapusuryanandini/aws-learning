@@ -1267,14 +1267,15 @@ Success End State
 ## Resources Created
 Step Function: aws-learning-day16-workflow
 IAM Role: aws-learning-day16-role
-# Setup
+
+## Setup
 ```bash
 npm install
 npm run create
 Run Workflow
 npm run execute
 ```
-# Cleanup
+## Cleanup
 ```bash
 npm run cleanup
 ```
@@ -1289,3 +1290,121 @@ https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html — Step Funct
 https://docs.aws.amazon.com/step-functions/latest/dg/concepts-state-machine.html — State machine concepts
 https://docs.aws.amazon.com/step-functions/latest/dg/concepts-states.html — Types of states (Pass, Task, Choice, Parallel)
 https://docs.aws.amazon.com/step-functions/latest/dg/bp-lambda.html — Using Lambda with Step Functions
+
+# 🚀 Day 17 — EventBridge
+
+> **Folder:** [17-eventbridge/](17-eventbridge/)
+
+---
+
+## 📌 Overview
+
+This project demonstrates **Amazon EventBridge**, a fully managed event routing service used to build event-driven architectures.
+
+It shows how to:
+
+- Create an EventBridge Event Bus  
+- Define Event Rules (event filtering and routing)  
+- Publish custom events using AWS SDK v3  
+- Route events to targets (Lambda / logs / services)  
+
+---
+
+## 🧩 What it covers
+
+- EventBridge Event Bus creation  
+- Custom event publishing using `PutEvents`  
+- Event pattern matching (rules)  
+- Event routing to targets  
+- Serverless event-driven architecture  
+
+---
+
+## ⚙️ Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run create` | Creates EventBridge event bus and rule |
+| `npm run publish` | Publishes custom event to EventBridge |
+| `npm run cleanup` | Deletes event bus and rules |
+
+---
+
+## 🏗️ Architecture Flow
+
+```text
+Application (Node.js SDK)
+        │
+        ▼
+EventBridge Event Bus
+        │
+        ▼
+Event Rule (Filter Pattern)
+        │
+        ▼
+Target (Lambda / SQS / Logs)
+```
+## 📤 Example Event
+
+```json
+{
+  "source": "aws.learning.day17",
+  "detail-type": "orderCreated",
+  "detail": {
+    "orderId": "123",
+    "amount": 250,
+    "status": "CREATED"
+  }
+}
+```
+
+## 🎯 Key Concepts Practiced
+
+- **Event Bus** — central pipeline for receiving events  
+- **Custom Events** — application-generated events  
+- **Event Pattern** — JSON rules used for filtering events  
+- **Rules** — match events and send them to targets  
+- **Decoupled systems** — producers and consumers are independent  
+- **At-least-once delivery** — events may be delivered multiple times  
+- **Serverless routing** — no infrastructure management required  
+
+# 🔄 Event Flow
+
+```text
+Producer (Node.js App)
+        │
+        ├── PutEvents (AWS SDK)
+        ▼
+EventBridge Event Bus
+        │
+        ├── Rule: orderCreated
+        ▼
+Target (Lambda / SQS / Logging)
+```
+
+# 🧱 Resources Created
+
+- Event Bus: `aws-learning-day17-bus`
+- Event Rule: `aws-learning-day17-rule`
+- Targets: Lambda / Log Group / SQS (based on setup)
+
+# ⚠️ Cleanup
+
+Always delete AWS resources after testing to avoid charges:
+
+```bash
+npm run cleanup
+```
+
+This removes:
+
+- EventBridge rules
+- Event bus
+- Associated targets
+
+# 📚 Further Reading
+
+- https://docs.aws.amazon.com/eventbridge/latest/userguide/what-is-amazon-eventbridge.html — EventBridge overview
+- https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html — Event patterns
+- https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rules.html — Rules in EventBridge
+- https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-putevents.html — PutEvents API
