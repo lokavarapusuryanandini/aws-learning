@@ -1870,3 +1870,221 @@ AWS Services:
 - Resource auditing only shows tagged resources.
 - Add tags to AWS resources for better audit results.
 - AWS credentials must be configured locally before running scripts.
+
+# Day 20 — Full Serverless Project Using AWS CDK
+
+This project demonstrates a complete serverless application using AWS CDK.
+
+The project includes:
+
+- AWS Lambda
+- API Gateway
+- Amazon S3
+- AWS CDK v2
+- Infrastructure as Code
+
+---
+
+# 📦 Tech Stack
+
+- TypeScript
+- AWS CDK v2
+- AWS Lambda
+- API Gateway
+- Amazon S3
+
+---
+
+# 📁 Project Structure
+
+```text
+20-project/
+│
+├── bin/
+│   └── app.ts
+│
+├── lib/
+│   └── serverless-stack.ts
+│
+├── lambda/
+│   └── hello.js
+│
+├── src/
+│   └── testEndpoints.ts
+│
+├── package.json
+├── tsconfig.json
+├── cdk.json
+└── README.md
+```
+
+---
+
+# 🔄 Architecture Flow
+
+```text
+User Request
+      │
+      ▼
+API Gateway
+      │
+      ▼
+AWS Lambda Function
+      │
+      ▼
+Amazon S3 Bucket
+      │
+      ▼
+JSON Response
+```
+
+---
+
+# 🧱 AWS Resources Created
+
+- Lambda Function
+- API Gateway REST API
+- S3 Bucket
+- CloudFormation Stack
+
+---
+
+# 🚀 Setup
+
+## Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+# ⚙️ Bootstrap CDK
+
+Run once before deploying:
+
+```bash
+npx cdk bootstrap
+```
+
+---
+
+# 🏗️ Deploy Infrastructure
+
+```bash
+npm run deploy
+```
+
+Example Output:
+
+```text
+Outputs:
+Day20ServerlessStack.ApiUrl =
+https://abcd123.execute-api.us-east-1.amazonaws.com/prod/
+
+Day20ServerlessStack.BucketName =
+sample-bucket-name
+```
+
+---
+
+# 🧪 Test API Endpoint
+
+Update `src/testEndpoints.ts` with your deployed API URL.
+
+Run:
+
+```bash
+npm run test
+```
+
+Example Output:
+
+```text
+======================================
+ TESTING SERVERLESS API
+======================================
+
+Status: 200
+
+Response:
+{
+  success: true,
+  message:
+  "Hello from AWS CDK Serverless Project 🚀"
+}
+
+======================================
+ TEST COMPLETE
+======================================
+```
+
+---
+
+# 📜 Available Scripts
+
+| Command | Description |
+|---|---|
+| `npm run deploy` | Deploy CDK stack |
+| `npm run destroy` | Remove AWS resources |
+| `npm run synth` | Generate CloudFormation template |
+| `npm run test` | Test deployed API endpoint |
+| `npm run build` | Compile TypeScript |
+
+---
+
+# 📚 AWS Services Used
+
+## AWS Lambda
+
+Runs serverless backend code.
+
+## API Gateway
+
+Exposes Lambda through an HTTP API.
+
+## Amazon S3
+
+Provides cloud object storage.
+
+## AWS CDK
+
+Defines infrastructure using TypeScript.
+
+---
+
+# 🎯 Learning Outcomes
+
+- Understand Infrastructure as Code
+- Deploy serverless applications
+- Create AWS resources using CDK
+- Integrate API Gateway with Lambda
+- Manage cloud infrastructure programmatically
+
+---
+
+# ⚠️ Cleanup
+
+Always remove AWS resources after testing to avoid charges.
+
+Run:
+
+```bash
+npm run destroy
+```
+
+This removes:
+
+- Lambda Function
+- API Gateway
+- S3 Bucket
+- CloudFormation Stack
+
+---
+
+# 📚 Further Reading
+
+- https://docs.aws.amazon.com/cdk/v2/guide/home.html
+- https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
+- https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html
+- https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html
