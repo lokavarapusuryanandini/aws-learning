@@ -1,1 +1,19 @@
-{"name":"15-elb-asg","version":"1.0.0","description":"Day 15 - ELB + ASG","scripts":{"build":"tsc","alb":"ts-node src/createAlb.ts","asg":"ts-node src/createAsg.ts","cleanup":"ts-node src/cleanup.ts"},"dependencies":{"@aws-sdk/client-elastic-load-balancing-v2":"^3.0.0","@aws-sdk/client-auto-scaling":"^3.0.0","@aws-sdk/client-ec2":"^3.0.0"},"devDependencies":{"@types/node":"^20.0.0","ts-node":"^10.9.0","typescript":"^5.0.0"}}
+{
+  "name": "15-elb-asg",
+  "version": "1.0.0",
+  "description": "Day 15 - ELB + Auto Scaling Group",
+  "scripts": {
+    "launch": "ts-node src/launchAsg.ts",
+    "scale": "ts-node src/scaleTest.ts",
+    "cleanup": "ts-node src/cleanup.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.0.0",
+    "@aws-sdk/client-elastic-load-balancing-v2": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}

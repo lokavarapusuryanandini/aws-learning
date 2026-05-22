@@ -1106,3 +1106,95 @@ Plaintext
 - AWS KMS Documentation
 - Envelope Encryption
 - Secret Rotation Best Practices
+
+# 15 — ELB + ASG (Auto Scaling) + Load Testing
+
+> **Folder:** [15-elb-asg/](15-elb-asg/)
+
+## What it covers
+
+Building a scalable AWS architecture using **Application Load Balancer (ALB)** + **Auto Scaling Group (ASG)** with EC2 instances behind a target group, and verifying it using a Node.js load test.
+
+---
+
+## Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run launch` | Creates Launch Template → ALB → Target Group → Listener → ASG (2 EC2 instances running Apache) |
+| `npm run scale` | Runs load test against ALB and verifies 200 responses from all instances |
+| `npm run cleanup` | Deletes ASG → ALB → Target Group → Launch Template → EC2 instances |
+
+---
+
+## Architecture
+User
+↓
+ALB (Load Balancer)
+↓
+Target Group
+↓
+Auto Scaling Group
+↓
+EC2 Instances (Apache + User Data)
+
+
+---
+
+## Key Concepts Practiced
+
+- **Launch Template** — blueprint for EC2 (AMI, instance type, user data, security groups)
+- **Auto Scaling Group (ASG)** — maintains desired number of EC2 instances automatically
+- **Desired Capacity** — number of instances ASG keeps running (here: 2)
+- **Min/Max Size** — scaling boundaries (2–4)
+- **Application Load Balancer (ALB)** — distributes traffic across healthy instances
+- **Target Group** — registers EC2 instances for ALB routing
+- **Health Checks** — ALB removes unhealthy instances automatically
+- **User Data Script** — installs Apache and serves response (`Hello from ASG instance`)
+- **Subnets (Public)** — required for ALB + internet access
+- **Security Groups** — controls ALB (80) and EC2 access
+
+---
+
+## Load Test Output
+Request 1 → Status: 200
+Request 2 → Status: 200
+...
+Request 30 → Status: 200
+
+---
+
+## Flow
+
+
+Request → ALB → Target Group → EC2 (ASG) → Apache Response
+
+
+---
+
+## Resources Created
+
+- Launch Template: `aws-learning-day15-lt`
+- ALB: `aws-learning-day15-lb`
+- Target Group: `aws-learning-day15-tg`
+- Auto Scaling Group: `aws-learning-day15-asg`
+- EC2 Instances: 2 running Apache
+
+---
+
+## Cleanup Note
+
+Always run cleanup to avoid charges:
+
+```bash
+npm run cleanup
+
+Deletes all AWS resources created in this module.
+
+## Further reading
+
+- https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html — Application Load Balancer (ALB) concepts and routing
+- https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html — Auto Scaling Groups and scaling policies
+- https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-templates.html — Launch Templates for EC2 configuration
+- https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/target-groups.html — Target Groups and health checks
+- https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Scenarios.html — VPC networking, public subnets, and internet access patterns
