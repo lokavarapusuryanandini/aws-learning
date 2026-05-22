@@ -1408,3 +1408,219 @@ This removes:
 - https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html — Event patterns
 - https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rules.html — Rules in EventBridge
 - https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-putevents.html — PutEvents API
+
+# Day 18 — CloudFront + Route53
+
+This project demonstrates how to host a static website using Amazon S3, deliver it globally with CloudFront CDN, and configure DNS using Route53.
+
+---
+
+# 📦 Tech Stack
+
+- TypeScript
+- AWS SDK v3
+- Amazon S3
+- Amazon CloudFront
+- Amazon Route53
+
+---
+
+# 📁 Project Structure
+
+```text
+18-cloudfront-r53/
+│
+├── src/
+│   ├── deployStaticSite.ts
+│   ├── createDistribution.ts
+│   ├── createRecord.ts
+│   ├── invalidateCache.ts
+│   └── cleanup.ts
+│
+├── website/
+│   ├── index.html
+│   ├── styles.css
+│   └── app.js
+│
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+---
+
+# 🔄 Architecture Flow
+
+```text
+Static Website Files
+        │
+        ▼
+Amazon S3 Bucket
+        │
+        ▼
+CloudFront Distribution
+        │
+        ▼
+Route53 DNS Record
+        │
+        ▼
+Users Access Website
+```
+
+---
+
+# 🧱 AWS Resources Created
+
+- S3 Bucket
+- Static Website Hosting
+- CloudFront Distribution
+- Route53 Hosted Zone Record
+- CloudFront Cache Invalidation
+
+---
+
+# 🚀 Setup
+
+## Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+# ▶️ Deploy Static Website
+
+This script:
+
+- Creates S3 bucket
+- Enables static website hosting
+- Uploads website files
+
+```bash
+npm run site
+```
+
+Example Output:
+
+```text
+Bucket already exists, continuing...
+Static website hosting enabled
+index.html uploaded
+styles.css uploaded
+app.js uploaded
+```
+
+---
+
+# 🌍 Create CloudFront Distribution
+
+This script creates a CloudFront CDN distribution for the S3 static website.
+
+```bash
+npm run cdn
+```
+
+Example Output:
+
+```text
+CloudFront URL:
+d1c7wj1byd2n6i.cloudfront.net
+```
+
+---
+
+# 🌐 Configure Route53
+
+This script creates a Route53 DNS record.
+
+```bash
+npm run dns
+```
+
+> Requires:
+>
+> - Purchased domain
+> - Route53 Hosted Zone ID
+
+---
+
+# ♻️ Invalidate CloudFront Cache
+
+This script clears cached content from CloudFront.
+
+```bash
+npm run invalidate
+```
+
+---
+
+# 🧹 Cleanup Resources
+
+Always delete AWS resources after testing to avoid charges.
+
+```bash
+npm run cleanup
+```
+
+Cleanup script removes:
+
+- S3 Bucket Objects
+- S3 Bucket
+- CloudFront Distribution
+
+---
+
+# 📜 Available Scripts
+
+| Command | Description |
+|---|---|
+| `npm run site` | Deploy static website to S3 |
+| `npm run cdn` | Create CloudFront distribution |
+| `npm run dns` | Create Route53 DNS record |
+| `npm run invalidate` | Invalidate CloudFront cache |
+| `npm run cleanup` | Delete AWS resources |
+
+---
+
+# 📚 AWS Services Used
+
+## Amazon S3
+
+Used for hosting static website files.
+
+## Amazon CloudFront
+
+Used as a global CDN to deliver content with low latency.
+
+## Amazon Route53
+
+Used for DNS management and domain routing.
+
+---
+
+# 🎯 Learning Outcomes
+
+- Create S3 static websites
+- Configure CloudFront CDN
+- Work with Route53 DNS
+- Perform cache invalidation
+- Automate AWS infrastructure using TypeScript
+
+---
+
+# 📚 Further Reading
+
+- https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteHosting.html
+- https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html
+- https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html
+- https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html
+
+---
+
+# ⚠️ Important Notes
+
+- S3 bucket names must be globally unique.
+- CloudFront distributions take several minutes to deploy.
+- Route53 requires a valid hosted zone and domain name.
+- Cleanup resources after testing to avoid AWS charges.

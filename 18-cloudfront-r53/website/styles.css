@@ -1,0 +1,32 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  height: 100vh;
+}
+
+.container {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+
+  text-align: center;
+
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+
+  background: black;
+  color: white;
+
+  cursor: pointer;
+}
