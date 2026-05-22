@@ -1188,6 +1188,7 @@ Always run cleanup to avoid charges:
 
 ```bash
 npm run cleanup
+```
 
 Deletes all AWS resources created in this module.
 
@@ -1198,3 +1199,93 @@ Deletes all AWS resources created in this module.
 - https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-templates.html — Launch Templates for EC2 configuration
 - https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/target-groups.html — Target Groups and health checks
 - https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Scenarios.html — VPC networking, public subnets, and internet access patterns
+
+# 16 — Step Functions (Serverless Orchestration)
+
+> **Folder:** [16-stepfunctions/](16-stepfunctions/)
+
+## What it covers
+
+Building a **serverless workflow orchestration system** using AWS Step Functions to coordinate multiple steps with branching and parallel execution.
+
+---
+
+## Tasks
+
+| Script | What it does |
+|--------|-------------|
+| `npm run build` | Compile TypeScript code |
+| `npm run create` | Create IAM role + Step Function state machine |
+| `npm run execute` | Start workflow execution with input |
+| `npm run cleanup` | Delete state machine and IAM role |
+
+---
+
+## Key Concepts Practiced
+
+- **Step Functions** — orchestrates AWS services in a workflow
+- **State Machine** — JSON definition of workflow logic
+- **Pass State** — passes data without processing
+- **Parallel State** — runs multiple branches at the same time
+- **Choice State (concept)** — conditional branching in workflows
+- **Execution Tracking** — monitor step-by-step workflow execution
+- **IAM Role for Step Functions** — permissions to invoke AWS services
+
+---
+
+## Architecture Flow
+Start
+↓
+Validate Input (Pass)
+↓
+Process Order (Pass)
+↓
+Parallel Execution
+├── Notify User
+└── Store Analytics
+↓
+Success End State
+
+
+---
+
+## Example Input
+
+```json id="sf16in"
+{
+  "orderId": "123",
+  "amount": 250
+}
+```
+
+## Example Output
+{
+  "status": "SUCCESS",
+  "message": "Workflow completed successfully"
+}
+
+## Resources Created
+Step Function: aws-learning-day16-workflow
+IAM Role: aws-learning-day16-role
+# Setup
+```bash
+npm install
+npm run create
+Run Workflow
+npm run execute
+```
+# Cleanup
+```bash
+npm run cleanup
+```
+Deletes all Step Functions and IAM roles created.
+
+⚠️ Note
+Step Functions are billed per state transition
+Always cleanup after testing to avoid charges
+
+## Further reading
+https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html — Step Functions overview
+https://docs.aws.amazon.com/step-functions/latest/dg/concepts-state-machine.html — State machine concepts
+https://docs.aws.amazon.com/step-functions/latest/dg/concepts-states.html — Types of states (Pass, Task, Choice, Parallel)
+https://docs.aws.amazon.com/step-functions/latest/dg/bp-lambda.html — Using Lambda with Step Functions

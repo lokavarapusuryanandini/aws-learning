@@ -1,1 +1,20 @@
-{"name":"16-stepfunctions","version":"1.0.0","description":"Day 16 - Step Functions","scripts":{"build":"tsc","create":"ts-node src/createStateMachine.ts","execute":"ts-node src/executeWorkflow.ts","cleanup":"ts-node src/cleanup.ts"},"dependencies":{"@aws-sdk/client-sfn":"^3.0.0","@aws-sdk/client-lambda":"^3.0.0"},"devDependencies":{"@types/node":"^20.0.0","ts-node":"^10.9.0","typescript":"^5.0.0"}}
+{
+  "name": "16-stepfunctions",
+  "version": "1.0.0",
+  "description": "Day 16 - Step Functions",
+  "scripts": {
+    "build": "tsc",
+    "create": "ts-node src/createStateMachine.ts",
+    "execute": "ts-node src/executeWorkflow.ts",
+    "cleanup": "ts-node src/cleanup.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sfn": "^3.0.0",
+    "@aws-sdk/client-lambda": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
