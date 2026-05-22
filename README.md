@@ -1624,3 +1624,249 @@ Used for DNS management and domain routing.
 - CloudFront distributions take several minutes to deploy.
 - Route53 requires a valid hosted zone and domain name.
 - Cleanup resources after testing to avoid AWS charges.
+
+# Day 19 — AWS Concepts and Review
+
+This project demonstrates important AWS concepts and best practices using AWS SDK v3 and TypeScript.
+
+The project includes:
+
+- AWS account inspection
+- AWS resource auditing
+- AWS Well-Architected Framework review
+
+---
+
+# 📦 Tech Stack
+
+- TypeScript
+- AWS SDK v3
+- AWS STS
+- AWS Resource Groups Tagging API
+
+---
+
+# 📁 Project Structure
+
+```text
+19-concepts/
+│
+├── src/
+│   ├── auditResources.ts
+│   └── wellArchitected.ts
+│
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+---
+
+# 🔄 Architecture Flow
+
+```text
+AWS Account
+      │
+      ▼
+STS Identity Check
+      │
+      ▼
+Tagged Resource Audit
+      │
+      ▼
+Well-Architected Review
+      │
+      ▼
+Best Practice Analysis
+```
+
+---
+
+# 🧱 AWS Services Used
+
+- AWS STS
+- Resource Groups Tagging API
+
+---
+
+# 🚀 Setup
+
+## Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+# ▶️ Audit AWS Resources
+
+This script:
+
+- Retrieves AWS account details
+- Lists tagged AWS resources
+- Displays resource tags
+
+Run:
+
+```bash
+npm run audit
+```
+
+Example Output:
+
+```text
+AWS Account Details
+
+Account ID: 123456789012
+User ARN: arn:aws:iam::123456789012:user/dev-user
+
+Tagged AWS Resources
+
+No tagged resources found
+```
+
+---
+
+# 🏛️ AWS Well-Architected Review
+
+This script reviews AWS cloud best practices based on the six AWS Well-Architected pillars.
+
+Run:
+
+```bash
+npm run waf
+```
+
+---
+
+# 📚 AWS Well-Architected Pillars
+
+## 1. Operational Excellence
+
+Best Practices:
+
+- Monitor workloads
+- Automate deployments
+- Improve operational procedures
+
+AWS Services:
+
+- CloudWatch
+- CloudFormation
+- CodePipeline
+
+---
+
+## 2. Security
+
+Best Practices:
+
+- Enable IAM least privilege
+- Encrypt sensitive data
+- Enable logging and auditing
+
+AWS Services:
+
+- IAM
+- KMS
+- CloudTrail
+
+---
+
+## 3. Reliability
+
+Best Practices:
+
+- Use backups
+- Enable automatic recovery
+- Design fault-tolerant systems
+
+AWS Services:
+
+- Route53
+- Auto Scaling
+- AWS Backup
+
+---
+
+## 4. Performance Efficiency
+
+Best Practices:
+
+- Optimize workloads
+- Scale dynamically
+- Monitor performance
+
+AWS Services:
+
+- CloudFront
+- ElastiCache
+- EC2 Auto Scaling
+
+---
+
+## 5. Cost Optimization
+
+Best Practices:
+
+- Remove unused resources
+- Monitor AWS billing
+- Use right-sized infrastructure
+
+AWS Services:
+
+- Cost Explorer
+- AWS Budgets
+- Trusted Advisor
+
+---
+
+## 6. Sustainability
+
+Best Practices:
+
+- Optimize infrastructure
+- Reduce idle resources
+- Use efficient architectures
+
+AWS Services:
+
+- AWS Lambda
+- S3 Intelligent Tiering
+- Auto Scaling
+
+---
+
+# 📜 Available Scripts
+
+| Command | Description |
+|---|---|
+| `npm run audit` | Audit tagged AWS resources |
+| `npm run waf` | Review AWS Well-Architected Framework |
+| `npm run build` | Compile TypeScript |
+
+---
+
+# 🎯 Learning Outcomes
+
+- Understand AWS account inspection
+- Learn AWS resource tagging
+- Review AWS architecture best practices
+- Work with AWS SDK v3 using TypeScript
+
+---
+
+# 📚 Further Reading
+
+- https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html
+- https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/Welcome.html
+- https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html
+
+---
+
+# ⚠️ Notes
+
+- Resource auditing only shows tagged resources.
+- Add tags to AWS resources for better audit results.
+- AWS credentials must be configured locally before running scripts.
